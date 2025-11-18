@@ -8,6 +8,7 @@
           <div class="relative">
             <input
               v-model="localSearchQuery"
+              @input="handleInput"
               type="text"
               :placeholder="searchPlaceholder"
               class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -59,15 +60,15 @@
                 :key="column.key"
                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300"
               >
-            
-            </td>
+                <span v-html="renderCell(item, column)"></span>
+              </td>
             </tr>
             <!-- 데이터가 없을 때 -->
-             <tr>
-              <td>
+            <tr v-if="filteredData.length === 0">
+              <td :dolspan="columns.length" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                 데이터가 없습니다.
               </td>
-             </tr>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -75,7 +76,37 @@
     <!-- 페이지 네이션 영역 -->
     <div class="flex justify-between items-center bg-white dark:bg-gray-800 rounded-lg shadow p-4 mt-6">
       <div class="text-sm text-gray-700 dark:text-gray-300">
-        총 <span>{{ filteredData.length }}</span>
+        총 <span>{{ filteredData.length }}</span
+        >{{ totalLabel }}
+      </div>
+      <div class="flex gap-2">
+        <button
+          @click="prevPage"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[
+            currentPage === page
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300',
+            'px-3 py-1 border rounded',
+          ]"
+        >
+          {{ page }}
+        </button>
+        <button
+          @click="nextPage"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -121,12 +152,35 @@ const props = defineProps({
     required: true,
   },
 
-  // 페이지당 아이템 수 
-  itemsPerPage :{
-    type:Number,
+  // 페이지당 아이템 수
+  itemsPerPage: {
+    type: Number,
     default: 5,
-  }
+  },
+
+  // 총 갯수 라벨 (예: ?명의 기사, ? 건의 예약 등)
+  totalLabel: {
+    type: String,
+    default: "개",
+  },
+  // 필터 함수(커스텀 필터링 로직)
+  filterFn: {
+    type: Function,
+    default: null,
+  },
 });
+
+// 한글입력해도 바로 검색되도록 설정하는 함수
+function handleInput(event) {
+  localSearchQuery.value = event.target.value;
+  // 검색할 때에는 첫 번째 페이지부터 다시 보기
+  currentPage.value = 1;
+}
+
+// 필터가 바뀔 떄 실행되는 함수
+const handleFilterChange = () => {
+  currentPage.value = 1;
+};
 
 // 필터 초기화
 //  만약에 필터 옵션이 있고 그안에 내용이 있다면
@@ -162,6 +216,30 @@ const filteredData = computed(() => {
       });
     });
   }
+
+  // 만약 커스텀 필터 함수 (filterFn)가 있으면 그 함수를 사용해서 필터링
+  if (props.filterFn) {
+    result = props.filterFn(result, localFilters.value);
+  } else {
+    // 커스텀이 없을 경우 기본 필터 방식으로 작동하기
+    Object.keys(localFilters.value).forEach((filterKey) => {
+      const filterValue = localFilters.value[filterKey];
+      // 필터 값이 있고 all 이나 빈 문자열이 아닐때만 실행
+      if (filterValue && filterValue !== "all" && filterValue !== "") {
+        // result 에서 해당 필터 조건에 맞는 것만 남기기
+        result = result.filter((item) => {
+          return (
+            // 필드 값이 필터 값과 같거나
+            item[filterKey] === filterValue ||
+            // 숫자일 경우에 필터 값 이상인 것도 허용
+            (typeof item[filterKey] === "number" && item[filterKey] >= parseFloat(filterValue))
+            // parseFloat 문자를 숫자로 변경
+          );
+        });
+      }
+    });
+  }
+
   //   다 필터링한 결과를 반환
   return result;
 });
@@ -170,11 +248,47 @@ const currentPage = ref(1);
 // 페이지네이션 된 데이터 계산
 const pagivatedData = computed(() => {
   const start = (currentPage.value - 1) * props.itemsPerPage;
-  const end = start + props.itemsPerPage
+  const end = start + props.itemsPerPage;
   // console.log(start, end);
-  return filteredData.value.slice(start, end)
-  
+  return filteredData.value.slice(start, end);
 });
+
+// 전체 페이지 수 계산
+const totalPages = computed(() => {
+  return Math.ceil(filteredData.value.length / props.itemsPerPage);
+});
+
+// cell 셀 렌더링 함수
+const renderCell = (item, column) => {
+  // console.log(item, column);
+  // 커스텀 렌더링 함수가 있으면 사용
+  if (column.render && typeof column.render === "function") {
+    return column.render(item);
+  }
+  // 기본값 : 필드값 그대로 표시하기
+  const value = item[column.key];
+  // console.log(value);
+  return value !== undefined && value !== null ? value : "";
+};
+
+// 페이지 이동 함수
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value;
+  }
+};
+//  다음페이지
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+// 이전 페이지
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
 
 // 데이터 변경시
 watch(() => props.data, { deep: true });

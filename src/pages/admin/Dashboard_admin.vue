@@ -64,6 +64,9 @@
         :search-fields="['customerName', 'id']"
         table-title="예약 목록"
         :columns="reserColumns"
+        :imtes-per-page="itemsPerPage"
+        total-label="건의 예약"
+        :filter-fn="dashFilterFn"
       />
     </div>
     <!-- 기사현황 -->
@@ -107,6 +110,8 @@ import Chart from "@/components/Chart.vue";
 import DashboardStats from "@/components/DashboardStats.vue";
 import SearchTable from "@/components/SearchTable.vue";
 import { ref, computed } from "vue";
+const itemsPerPage = ref(5);
+
 // 통계카드 더미
 const stats = [
   {
@@ -295,4 +300,22 @@ const reserColumns = [
       `<button onclick="window.handleReservationClick('${item.id}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3"><i class="fa-solid fa-eye mr-1"></i> 상세</button>`,
   },
 ];
+
+// 날짜 포맷 변경 함수
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString("ko-KR", {
+    year: "numeric", // 년도
+    month: "long", // 월 (한글 월 이름)
+    day: "numeric", // 일
+    weekday: "long", // 요일 (한글 요일 이름)
+  });
+};
+
+// 커스텀 필터 함수(날짜 범위 포함)
+const dashFilterFn = (data, filters)=>{
+let result = [...data]
+console.log(result);
+console.log(filters);
+
+}
 </script>
