@@ -52,6 +52,23 @@
               </th>
             </tr>
           </thead>
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="item in pagivatedData" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td
+                v-for="column in columns"
+                :key="column.key"
+                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300"
+              >
+            
+            </td>
+            </tr>
+            <!-- 데이터가 없을 때 -->
+             <tr>
+              <td>
+                데이터가 없습니다.
+              </td>
+             </tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -103,6 +120,12 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+
+  // 페이지당 아이템 수 
+  itemsPerPage :{
+    type:Number,
+    default: 5,
+  }
 });
 
 // 필터 초기화
@@ -142,6 +165,17 @@ const filteredData = computed(() => {
   //   다 필터링한 결과를 반환
   return result;
 });
+
+const currentPage = ref(1);
+// 페이지네이션 된 데이터 계산
+const pagivatedData = computed(() => {
+  const start = (currentPage.value - 1) * props.itemsPerPage;
+  const end = start + props.itemsPerPage
+  // console.log(start, end);
+  return filteredData.value.slice(start, end)
+  
+});
+
 // 데이터 변경시
 watch(() => props.data, { deep: true });
 </script>
