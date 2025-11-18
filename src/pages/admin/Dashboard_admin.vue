@@ -312,10 +312,21 @@ const formatDate = (date) => {
 };
 
 // 커스텀 필터 함수(날짜 범위 포함)
-const dashFilterFn = (data, filters)=>{
-let result = [...data]
-console.log(result);
-console.log(filters);
+const dashFilterFn = (data, filters) => {
+  let result = [...data];
+  // console.log(result);
+  // console.log(filters);
 
-}
+  // 서비스 필터링
+  if (filters.serviceType && filters.serviceType !== "all") {
+    result = result.filter((reser) => reser.type === filters.serviceType);
+  }
+
+  // 접수 상태 필터링
+  if (filters.receiptStatus && filters.receiptStatus !== "all") {
+    result = result.filter((reser) => reser.status === filters.receiptStatus);
+  }
+
+  return result;
+};
 </script>
