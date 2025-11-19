@@ -117,6 +117,8 @@ import { ref, watch, computed } from "vue";
 
 const localSearchQuery = ref("");
 const localFilters = ref({});
+const emit = defineEmits(["row-click"])
+
 // Props 정의
 const props = defineProps({
   // 전체 데이터 배열
