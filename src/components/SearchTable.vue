@@ -276,7 +276,7 @@ const renderCell = (item, column) => {
 // 페이지 이동 함수
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
-    currentPage.value;
+    currentPage.value = page;
   }
 };
 //  다음페이지
