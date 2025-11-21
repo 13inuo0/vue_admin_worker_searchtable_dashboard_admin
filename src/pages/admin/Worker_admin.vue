@@ -4,19 +4,23 @@
    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">기사 정보를 관리하고 상태를 확인할 수 있습니다.</p>
     <!-- 통계카드 -->
     <DashboardStats :stats="stats" />
+    <!-- 기사 리스트 -->
+<Worker_dash/>
   </div>
   
 </template>
 <script setup>
 import DashboardStats from '@/components/DashboardStats.vue';
-import { ref } from 'vue';
+import Worker_dash from '@/components/Worker_dash.vue';
+import { workersData } from '@/data/workers';
+import { computed, ref } from 'vue';
 
-
-const stats = ref([
-  {
+const Workers = ref([...workersData])
+const stats = computed(()=>[
+   {
     title: "전체 기사",
-    // value: `${worker_name.value.length}명`,
-    value: "15명",
+    value: `${Workers.value.length}명`,
+    // value: "15명",
     change: "+3명",
     icon: "fas fa-user-tie",
     bg: "bg-blue-100 dark:bg-blue-900",
@@ -24,7 +28,8 @@ const stats = ref([
   },
   {
     title: "활동중",
-    value: "4명",
+    value: `${Workers.value.filter((w)=>w.status === "활동중").length}명`,
+    // value: "4명",
     change: "+1명",
     icon: "fas fa-check-circle",
     bg: "bg-green-100 dark:bg-green-900",
@@ -32,11 +37,14 @@ const stats = ref([
   },
   {
     title: "평균 평점",
-    value: "4.6",
+    value: Workers.value.length>0
+    ?(Workers.value.reduce((sum,w)=>sum+w.rating,0) /Workers.value.length).toFixed(1)
+    :"0.0",
+    // value: "4.6",
     change: "+0.1",
     icon: "fas fa-star",
     bg: "bg-yellow-100 dark:bg-yellow-900",
     color: "text-yellow-600 dark:text-yellow-300",
   },
-]);
+])
 </script>
